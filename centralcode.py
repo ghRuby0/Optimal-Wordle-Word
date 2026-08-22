@@ -1,13 +1,13 @@
-ITERLEN = 100 # The amount of words tested at a time
+ITERLEN = 3 # The amount of words tested at a time
 LDB_LEN = 100 # The amount of results you'd like to see. Must be less than double ITERLEN if using debug method
 IGNORE = ["5-letter-words.txt", "5-letters.txt"] # Files you don't want to pull words from
-ABSOLUTE_METHOD = False # Set to true if you want the absolute method. See README for details
-SHUFFLER_METHOD = True # Set to true if you want the shuffler method. See README for details
+ABSOLUTE_METHOD = True # Set to true if you want the absolute method. See README for details
+SHUFFLER_METHOD = False # Set to true if you want the shuffler method. See README for details
 DEBUG_METHOD = False # Do you want to run on only a slice?
 DEBUG_SIZE = ITERLEN # How big do you want that slice to be? Copies ITERLEN value, so go change that
 START_FROM_SCRATCH = False # Do you want to reset your leaderboard data every time you run?
-PRINTOUT = True # Set to true if you want a printed-out file containing the results
-CHECKLEADERBOARD = True
+PRINTOUT = False # Set to true if you want a printed-out file containing the results
+CHECKLEADERBOARD = False
 
 GUESS_MATRIX = [[("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # Letters are tagged with "y", "g", "n" for "yellow",
                 [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # "green", or "none (grey)". Actual letters are capital.
@@ -386,6 +386,7 @@ if len(unchecked_words_list) != 0:
     # Runs the Absolute Method (See README for details)
     if ABSOLUTE_METHOD:
         print("Running Absolute Method:")
+        print(ITERLEN, "Words to run")
         # Takes ITERDIR number of words, tests them, adds them to the leaderboard
         if len(unchecked_words_list) > ITERLEN:
             golden_algorithm(GUESS_MATRIX, unchecked_words_list[0:ITERLEN], master_word_list)
@@ -411,6 +412,8 @@ if len(unchecked_words_list) != 0:
         difflist = random.sample(unchecked_words_list[:numwhole * ITERLEN], diff)
         lastslice = difflist + unchecked_words_list[numwhole*ITERLEN:]
         golden_algorithm(GUESS_MATRIX, lastslice, lastslice)
+
+print("Methodology Completed")
 
 # Extracts the leaderboard and produces results
 if CHECKLEADERBOARD:
