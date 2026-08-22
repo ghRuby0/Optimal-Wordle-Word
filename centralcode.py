@@ -1,5 +1,5 @@
 ITERLEN = 100 # The amount of words tested at a time
-LDB_LEN = 100 # The amount of results you'd like to see. Must be less than ITERLEN if using debug method
+LDB_LEN = 100 # The amount of results you'd like to see. Must be less than double ITERLEN if using debug method
 IGNORE = ["5-letter-words.txt", "5-letters.txt"] # Files you don't want to pull words from
 ABSOLUTE_METHOD = False # Set to true if you want the absolute method. See README for details
 SHUFFLER_METHOD = True # Set to true if you want the shuffler method. See README for details
@@ -7,6 +7,7 @@ DEBUG_METHOD = False # Do you want to run on only a slice?
 DEBUG_SIZE = ITERLEN # How big do you want that slice to be? Copies ITERLEN value, so go change that
 START_FROM_SCRATCH = True # Do you want to reset your leaderboard data every time you run
 PRINTOUT = True # Set to true if you want a printed-out file containing the results
+CHECKLEADERBOARD = True
 
 GUESS_MATRIX = [[("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # Letters are tagged with "y", "g", "n" for "yellow",
                 [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # "green", or "none (grey)". Actual letters are capital.
@@ -30,6 +31,19 @@ if START_FROM_SCRATCH:
     for file in (cwd / CHECKEDFILE).iterdir():
         with open(str(file), "w") as file:
             pass
+
+# Sets up method variable, checks for basic constant errors
+if SHUFFLER_METHOD:
+    method = "shuffler"
+if DEBUG_METHOD:
+    method = "debug"
+if ABSOLUTE_METHOD:
+    method = "absolute"
+if int(SHUFFLER_METHOD) + int(ABSOLUTE_METHOD) + int(DEBUG_METHOD) != 1:
+    raise ValueError("Only one of the method constants may be set to True")
+if DEBUG_METHOD and (ITERLEN < LDB_LEN):
+    raise ValueError("ITERLEN cannot be set to less than LDB_LEN. Either lower LDB_LEN (recommended) or raise ITERLEN")
+
 
 # Takes the file name of the list and returns the words, formatted as a list
 def list_extract(file_name):
@@ -337,7 +351,6 @@ for wordlist in wordswd.iterdir():
 
 # Just if you want to run it super quickly to test for kinks
 if DEBUG_METHOD:
-    method = "debug"
     print("Running Debug Method:")
     random.shuffle(master_word_list) # TEST REMOVE LATER
     master_word_list = master_word_list[0:DEBUG_SIZE] # TEST REMOVE LATER
@@ -372,7 +385,6 @@ print("=========================")
 if len(unchecked_words_list) != 0:
     # Runs the Absolute Method (See README for details)
     if ABSOLUTE_METHOD:
-        method = "absolute"
         print("Running Absolute Method:")
         # Takes ITERDIR number of words, tests them, adds them to the leaderboard
         if len(unchecked_words_list) > ITERLEN:
@@ -382,7 +394,6 @@ if len(unchecked_words_list) != 0:
 
     # Runs the Shuffler Method (See README for details)
     if SHUFFLER_METHOD:
-        method = "shuffler"
         print("Running shuffler method:")
         numwhole = len(unchecked_words_list) // ITERLEN
         random.shuffle(unchecked_words_list)
@@ -396,15 +407,15 @@ if len(unchecked_words_list) != 0:
             print("Running slice", str(i + 1), "//" , str(numwhole + 1))
             golden_algorithm(GUESS_MATRIX, unchecked_words_list[i * ITERLEN:(i + 1)*ITERLEN], unchecked_words_list[i * ITERLEN:(i + 1)*ITERLEN])
             i = i + 1
+        print("running final slice")
         difflist = random.sample(unchecked_words_list[:numwhole * ITERLEN], diff)
-        lastslice = difflist + unchecked_words_list[(i + 1)*ITERLEN:]
+        lastslice = difflist + unchecked_words_list[numwhole*ITERLEN:]
         golden_algorithm(GUESS_MATRIX, lastslice, lastslice)
 
 # Extracts the leaderboard and produces results
-CHECKLEADERBOARD = True
 if CHECKLEADERBOARD:
     leaderboard = list_extract(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]))
-    print(len(leaderboard), "entries")
+    print(len(leaderboard), "words checked")
     ldb = []
     for line in leaderboard:
         line = "".join(line.split())
@@ -418,10 +429,10 @@ if CHECKLEADERBOARD:
     for i in range(checkedwords - LDB_LEN, checkedwords):
         print(">", ldb[i][0], "---", "EX INFOGAIN", ldb[i][1], "nats")
 
-# Writes total leaderboard output into a file 
-if PRINTOUT:
-    with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\finalresults.txt"]), "a") as file:
-        file.write("Produced using the" + method + "method with ITERLEN" + str(ITERLEN) + "\n")
-        for word in sorted(ldb, key=lambda x: x[1], reversed=True):
-            file.write(word[0] + "--- EIG ~ " + word[1] + "\n")
-        file.close()
+    # Writes total leaderboard output into a file 
+    if PRINTOUT:
+        with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\finalresults.txt"]), "w") as file:
+            file.write("Produced using the" + method + "method with ITERLEN" + str(ITERLEN) + "\n")
+            for word in sorted(ldb, key=lambda x: x[1], reverse=True):
+                file.write(word[0] + "--- EIG ~ " + word[1] + "\n")
+            file.close()
