@@ -1,7 +1,12 @@
-ITERLEN = 50 # The amount of words tested at a time
-LDB_LEN = 10
-IGNORE = ["5-letter-words.txt", "5-letters.txt"]
-DEBUG = False
+ITERLEN = 100 # The amount of words tested at a time
+LDB_LEN = 100 # The amount of results you'd like to see. Must be less than ITERLEN if using debug method
+IGNORE = ["5-letter-words.txt", "5-letters.txt"] # Files you don't want to pull words from
+ABSOLUTE_METHOD = False # Set to true if you want the absolute method. See README for details
+SHUFFLER_METHOD = True # Set to true if you want the shuffler method. See README for details
+DEBUG_METHOD = False # Do you want to run on only a slice?
+DEBUG_SIZE = ITERLEN # How big do you want that slice to be? Copies ITERLEN value, so go change that
+START_FROM_SCRATCH = True # Do you want to reset your leaderboard data every time you run
+PRINTOUT = True # Set to true if you want a printed-out file containing the results
 
 GUESS_MATRIX = [[("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # Letters are tagged with "y", "g", "n" for "yellow",
                 [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # "green", or "none (grey)". Actual letters are capital.
@@ -12,12 +17,19 @@ GUESS_MATRIX = [[("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # Lette
 
 CHECKEDFILE = "all_checked_words" # File name for subfolder containing already collected results
 
+# Imports
 import os
 import math
 from pathlib import Path
 import random
 cwd = Path(os.getcwd())
 wordswd = Path(str(cwd) + "//sourcewords")
+
+# Resets the savedata files
+if START_FROM_SCRATCH:
+    for file in (cwd / CHECKEDFILE).iterdir():
+        with open(str(file), "w") as file:
+            pass
 
 # Takes the file name of the list and returns the words, formatted as a list
 def list_extract(file_name):
@@ -249,7 +261,6 @@ def golden_algorithm(guess_matrix, word_list, master_word_list):
     print("=======================")
     letter_options = get_element_options(guess_matrix, master_word_list)
     base_entropy = entropy_of_options(letter_options)
-    print("Base Entropy:", base_entropy, "nats")
 
     # Loops through each possible word to find the best opener
     leaderboard = []
@@ -257,7 +268,7 @@ def golden_algorithm(guess_matrix, word_list, master_word_list):
     check = 1
     for test_word in word_list:
         # Acquires the probability of each colour convolution
-        print("Checking", check, "//", num_checks, "---", test_word)
+        # print("Checking", check, "//", num_checks, "---", test_word)
         convolutions = []
         for word in master_word_list:
             result = wordle(word, test_word)
@@ -290,22 +301,26 @@ def golden_algorithm(guess_matrix, word_list, master_word_list):
             test_entropy = entropy_of_options(options)
             infogain = base_entropy - test_entropy
             ex_infogain = ex_infogain + infogain * conv[1]
-        print(test_word, "Tested: Expected infogain:", ex_infogain, "nats")
+        # print(test_word, "Tested: Expected infogain:", ex_infogain, "nats")
 
         # Checks the leaderboard and updates it based on what's best
         leaderboard.append([test_word, ex_infogain])
         check = check + 1
+    past_words = list_extract(cwd / CHECKEDFILE / "checkedwords.txt")
     with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedwords.txt"]), "a") as file:
         for word in leaderboard:
-            file.write(word[0] + "\n")
+            if word[0] not in past_words:
+                file.write(word[0] + "\n")
         file.close()
     with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]), "a") as file:
         for word in leaderboard:
-            file.write(word[0] + "~" + str(word[1]) + "\n")
+            if word[0] not in past_words:
+                file.write(word[0] + "~" + str(word[1]) + "\n")
         file.close()
                    
+# ACTIVE CODE BELOW
 
-# Acquires all possible words it could be
+# Acquires all possible words it could be, searching word lists that aren't in IGNORE
 print("Acquiring Words")
 master_word_list = []
 for wordlist in wordswd.iterdir():
@@ -321,39 +336,75 @@ for wordlist in wordswd.iterdir():
                 master_word_list.append(elem)
 
 # Just if you want to run it super quickly to test for kinks
-if DEBUG:
+if DEBUG_METHOD:
+    method = "debug"
+    print("Running Debug Method:")
     random.shuffle(master_word_list) # TEST REMOVE LATER
-    master_word_list = master_word_list[0:50] # TEST REMOVE LATER
+    master_word_list = master_word_list[0:DEBUG_SIZE] # TEST REMOVE LATER
 unchecked_words_list = master_word_list.copy()
 
 # Removes all the previously checked words from the list
 checkedwords = 0
 if cwd / CHECKEDFILE in cwd.iterdir():
+    if (CHECKEDFILE + "\\checkedwords.txt") not in str(cwd / CHECKEDFILE):
+        with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedwords.txt"]), "a") as file:
+            file.close()
+        with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]), "a") as file:
+            file.close()
     list_word_list = list_extract(CHECKEDFILE + "\\checkedwords.txt")
     checkedwords = len(list_word_list)
     print("Already checked words: ", checkedwords)
     for word in list_word_list:
-        unchecked_words_list.remove(word)
+        if word in unchecked_words_list:
+            unchecked_words_list.remove(word)
         
 # Create a file for all the checked words
 if cwd / CHECKEDFILE not in cwd.iterdir():
     os.makedirs(str(cwd) + "".join(["\\", CHECKEDFILE]), exist_ok=True)
 
+print("=========================")
 print("Total Wordlist Found:", len(master_word_list), "words testable")
-print("Unchecked words", len(unchecked_words_list), "+", checkedwords, "=", checkedwords + len(unchecked_words_list))
-print("Thus far ", (checkedwords / len(master_word_list)) * 100, "/% checked")
+print("Unchecked words", len(unchecked_words_list), "+ checked words", checkedwords, "=", checkedwords + len(unchecked_words_list))
+print("Thus far ", (checkedwords / len(master_word_list)) * 100, "% checked")
+print("=========================")
 
+# If there's still work to be done
+if len(unchecked_words_list) != 0:
+    # Runs the Absolute Method (See README for details)
+    if ABSOLUTE_METHOD:
+        method = "absolute"
+        print("Running Absolute Method:")
+        # Takes ITERDIR number of words, tests them, adds them to the leaderboard
+        if len(unchecked_words_list) > ITERLEN:
+            golden_algorithm(GUESS_MATRIX, unchecked_words_list[0:ITERLEN], master_word_list)
+        else: 
+            golden_algorithm(GUESS_MATRIX, unchecked_words_list, master_word_list)
 
-# Takes ITERDIR number of words, tests them, adds them to the leaderboard
-if len(unchecked_words_list) > ITERLEN:
-    golden_algorithm(GUESS_MATRIX, unchecked_words_list[0:ITERLEN], master_word_list)
-else: 
-    golden_algorithm(GUESS_MATRIX, unchecked_words_list, master_word_list)
+    # Runs the Shuffler Method (See README for details)
+    if SHUFFLER_METHOD:
+        method = "shuffler"
+        print("Running shuffler method:")
+        numwhole = len(unchecked_words_list) // ITERLEN
+        random.shuffle(unchecked_words_list)
+        if len(unchecked_words_list) >= ITERLEN:
+            diff = len(unchecked_words_list) - numwhole*ITERLEN
+        else:
+            diff = len(unchecked_words_list)
+        print(str(numwhole), "slices necessary of size ", ITERLEN, "and one of size", diff)
+        i = 0
+        for i in range(numwhole):
+            print("Running slice", str(i + 1), "//" , str(numwhole + 1))
+            golden_algorithm(GUESS_MATRIX, unchecked_words_list[i * ITERLEN:(i + 1)*ITERLEN], unchecked_words_list[i * ITERLEN:(i + 1)*ITERLEN])
+            i = i + 1
+        difflist = random.sample(unchecked_words_list[:numwhole * ITERLEN], diff)
+        lastslice = difflist + unchecked_words_list[(i + 1)*ITERLEN:]
+        golden_algorithm(GUESS_MATRIX, lastslice, lastslice)
 
 # Extracts the leaderboard and produces results
 CHECKLEADERBOARD = True
 if CHECKLEADERBOARD:
     leaderboard = list_extract(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]))
+    print(len(leaderboard), "entries")
     ldb = []
     for line in leaderboard:
         line = "".join(line.split())
@@ -364,5 +415,13 @@ if CHECKLEADERBOARD:
     for i in range(LDB_LEN):
         print(">", ldb[i][0], "---", "EX INFOGAIN", ldb[i][1], "nats")
     print("BEST WORDS:\n=============")
-    for i in range(len(master_word_list) - LDB_LEN, len(master_word_list)):
+    for i in range(checkedwords - LDB_LEN, checkedwords):
         print(">", ldb[i][0], "---", "EX INFOGAIN", ldb[i][1], "nats")
+
+# Writes total leaderboard output into a file 
+if PRINTOUT:
+    with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\finalresults.txt"]), "a") as file:
+        file.write("Produced using the" + method + "method with ITERLEN" + str(ITERLEN) + "\n")
+        for word in sorted(ldb, key=lambda x: x[1], reversed=True):
+            file.write(word[0] + "--- EIG ~ " + word[1] + "\n")
+        file.close()
