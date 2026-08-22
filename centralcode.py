@@ -152,7 +152,7 @@ def get_element_options(guess_matrix, word_list):
                     for elem in guess:
                         amt_greens = 0
                         green_slots = []
-                        if (elem[0] == letter) and (elem[1] == "green"):
+                        if (elem[0] == letter) and (elem[1] == "g"):
                             green_slots.append(i)
                             amt_greens = amt_greens + 1
                         amt_yellows = 0
@@ -236,7 +236,7 @@ def wordle(true_word, guess_word):
                 if j < i:
                     if let == letter:
                         amount = amount - 1
-                if j == 1:
+                if j == i:
                     if amount > 0:
                         col_answer[i] = "y"
                 j = j + 1

@@ -14,4 +14,7 @@ The files currently present are attributed as follows:
 
 The code will also create a folder within the directory containing the results (2 .txt files): both a list of all words already checked, and the results of their respective expected information gain statistics.
 
-If you're wondering what my results were, it'll take a while but right now the winner is "SLATE"
+Made for Windows. Linux/MacOS attempts will likely encounter some path errors.
+
+
+If you're wondering what my results were, it'll take a while but right now the winner is "SLATE".
