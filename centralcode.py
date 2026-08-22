@@ -309,7 +309,6 @@ def golden_algorithm(guess_matrix, word_list, master_word_list):
 print("Acquiring Words")
 master_word_list = []
 for wordlist in wordswd.iterdir():
-    print(wordlist)
     ignore_p = False
     for ig in IGNORE:
         if ig in str(wordlist):
