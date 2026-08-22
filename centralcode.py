@@ -5,7 +5,7 @@ ABSOLUTE_METHOD = False # Set to true if you want the absolute method. See READM
 SHUFFLER_METHOD = True # Set to true if you want the shuffler method. See README for details
 DEBUG_METHOD = False # Do you want to run on only a slice?
 DEBUG_SIZE = ITERLEN # How big do you want that slice to be? Copies ITERLEN value, so go change that
-START_FROM_SCRATCH = True # Do you want to reset your leaderboard data every time you run
+START_FROM_SCRATCH = False # Do you want to reset your leaderboard data every time you run?
 PRINTOUT = True # Set to true if you want a printed-out file containing the results
 CHECKLEADERBOARD = True
 
@@ -69,7 +69,7 @@ def get_element_options(guess_matrix, word_list):
 
     # Cleans options based on guess matrix data
     # Logic Used:
-    # 1 IF a cell is green, then there is only one possible option for that cell
+    # 1 If a cell is green, then there is only one possible option for that cell
     # 2 If a cell is green, and another cell with the same letter is grey, then that letter must be removed from all options except the green cell
     # 3 If a cell is green, and another cell with the same letter is yellow, then that comes under the provision where yellow letters need to be narrowed down
     # 4 If a cell is grey, then that cell may not contain that letter
