@@ -1,5 +1,5 @@
 ITERLEN = 1000 # The amount of words tested at a time
-LDB_LEN = 10 # The amount of results you'd like to see. Must be less than double ITERLEN if using debug method
+LDB_LEN = 20 # The amount of results you'd like to see. Must be less than double ITERLEN if using debug method
 IGNORE = ["5-letter-words.txt", "5-letters.txt"] # Files you don't want to pull words from
 ABSOLUTE_METHOD = True # Set to true if you want the absolute method. See README for details
 SHUFFLER_METHOD = False # Set to true if you want the shuffler method. See README for details
@@ -15,6 +15,8 @@ GUESS_MATRIX = [[("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # Lette
                 [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # An empty cell is denoted by *,*
                 [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")],
                 [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")]]
+
+PRIORS = ["SLATE"] # List of all words you want to include inside the guess matrix with no assigned colours (All caps)
 
 CHECKEDFILE = "all_checked_words" # File name for subfolder containing already collected results
 
@@ -271,10 +273,8 @@ def wordle(true_word, guess_word):
 
 
 # My preferred word decision algorithm, as described above
-def golden_algorithm(guess_matrix, word_list, master_word_list):
+def golden_algorithm(guess_matrix, word_list, master_word_list, base_entropy):
     print("=======================")
-    letter_options = get_element_options(guess_matrix, master_word_list)
-    base_entropy = entropy_of_options(letter_options)
 
     # Finds the nearest empty line
     new_line = 0
@@ -301,6 +301,7 @@ def golden_algorithm(guess_matrix, word_list, master_word_list):
         n = len(master_word_list)
         for conv in convolutions:
             conv[1] = float(conv[1]) / float(n)
+            print("Convolutions Acquired: ", len(convolutions))
 
         # Finds the expected information gain of each convolution
         ex_infogain = 0
@@ -364,12 +365,15 @@ if cwd / CHECKEDFILE in cwd.iterdir():
             file.close()
         with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]), "a") as file:
             file.close()
-    list_word_list = list_extract(CHECKEDFILE + "\\checkedwords.txt")
+    list_word_list = list(set(list_extract(CHECKEDFILE + "\\checkedwords.txt")))
     checkedwords = len(list_word_list)
     print("Already checked words: ", checkedwords)
     for word in list_word_list:
         if word in unchecked_words_list:
             unchecked_words_list.remove(word)
+
+# Randomises what is gotten to allow for parallelisation
+unchecked_words_list = random.shuffle(unchecked_words_list)
         
 # Create a file for all the checked words
 if cwd / CHECKEDFILE not in cwd.iterdir():
@@ -380,19 +384,23 @@ print("Total Wordlist Found:", len(master_word_list), "words testable")
 print("Unchecked words", len(unchecked_words_list), "+ checked words", checkedwords, "=", checkedwords + len(unchecked_words_list))
 print("Thus far ", (checkedwords / len(master_word_list)) * 100, "% checked")
 print("=========================")
+print("Priors: ", PRIORS)
 
 # If there's still work to be done
 if len(unchecked_words_list) != 0:
+
+    # Gets base entropy for any guess
+    base_entropy = entropy_of_options(get_element_options(GUESS_MATRIX, master_word_list))
+
     # Runs the Absolute Method (See README for details)
-    
     if ABSOLUTE_METHOD:
         print("Running Absolute Method:")
         print(ITERLEN, "Words to run")
         # Takes ITERDIR number of words, tests them, adds them to the leaderboard
         if len(unchecked_words_list) > ITERLEN:
-            golden_algorithm(GUESS_MATRIX, unchecked_words_list[0:ITERLEN], master_word_list)
+            golden_algorithm(GUESS_MATRIX, unchecked_words_list[0:ITERLEN], master_word_list, base_entropy)
         else: 
-            golden_algorithm(GUESS_MATRIX, unchecked_words_list, master_word_list)
+            golden_algorithm(GUESS_MATRIX, unchecked_words_list, master_word_list, base_entropy)
 
     # Runs the Shuffler Method (See README for details)
     if SHUFFLER_METHOD:
@@ -407,12 +415,12 @@ if len(unchecked_words_list) != 0:
         i = 0
         for i in range(numwhole):
             print("Running slice", str(i + 1), "//" , str(numwhole + 1))
-            golden_algorithm(GUESS_MATRIX, unchecked_words_list[i * ITERLEN:(i + 1)*ITERLEN], unchecked_words_list[i * ITERLEN:(i + 1)*ITERLEN])
+            golden_algorithm(GUESS_MATRIX, unchecked_words_list[i * ITERLEN:(i + 1)*ITERLEN], unchecked_words_list[i * ITERLEN:(i + 1)*ITERLEN], base_entropy)
             i = i + 1
         print("running final slice")
         difflist = random.sample(unchecked_words_list[:numwhole * ITERLEN], diff)
         lastslice = difflist + unchecked_words_list[numwhole*ITERLEN:]
-        golden_algorithm(GUESS_MATRIX, lastslice, lastslice)
+        golden_algorithm(GUESS_MATRIX, lastslice, lastslice, base_entropy)
 
 print("Methodology Completed")
 
