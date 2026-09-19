@@ -1,3 +1,5 @@
+# Based on constants, iteratively computes best possible wordle guess considering the priors.
+
 ITERLEN = 1000 # The amount of words tested at a time
 LDB_LEN = 20 # The amount of results you'd like to see. Must be less than double ITERLEN if using debug method
 IGNORE = ["5-letter-words.txt", "5-letters.txt"] # Files you don't want to pull words from
@@ -301,10 +303,11 @@ def golden_algorithm(guess_matrix, word_list, master_word_list, base_entropy):
         n = len(master_word_list)
         for conv in convolutions:
             conv[1] = float(conv[1]) / float(n)
-            print("Convolutions Acquired: ", len(convolutions))
+        print("Convolutions Acquired: ", len(convolutions))
 
         # Finds the expected information gain of each convolution
         ex_infogain = 0
+        j = 1
         for conv in convolutions:
             test_guess_matrix = guess_matrix.copy()
             test_guess = []
@@ -313,10 +316,11 @@ def golden_algorithm(guess_matrix, word_list, master_word_list, base_entropy):
                 test_guess.append(((test_word[i]).upper(), col))
                 i = i + 1
             test_guess_matrix[new_line] = test_guess
-            options = get_element_options(test_guess_matrix, master_word_list)
-            test_entropy = entropy_of_options(options)
+            test_entropy = entropy_of_options(get_element_options(test_guess_matrix, master_word_list))
             infogain = base_entropy - test_entropy
+            print("> Tested", j, "/", len(convolutions), " : ", conv, " :: Infogain: ", infogain, "nats")
             ex_infogain = ex_infogain + infogain * conv[1]
+            j = j + 1
         print(test_word, "Tested: Expected infogain:", ex_infogain, "nats")
 
         # Adds word to file
@@ -373,7 +377,7 @@ if cwd / CHECKEDFILE in cwd.iterdir():
             unchecked_words_list.remove(word)
 
 # Randomises what is gotten to allow for parallelisation
-unchecked_words_list = random.shuffle(unchecked_words_list)
+random.shuffle(unchecked_words_list)
         
 # Create a file for all the checked words
 if cwd / CHECKEDFILE not in cwd.iterdir():
@@ -391,6 +395,7 @@ if len(unchecked_words_list) != 0:
 
     # Gets base entropy for any guess
     base_entropy = entropy_of_options(get_element_options(GUESS_MATRIX, master_word_list))
+    print("base entropy: ", base_entropy, "nats")
 
     # Runs the Absolute Method (See README for details)
     if ABSOLUTE_METHOD:
