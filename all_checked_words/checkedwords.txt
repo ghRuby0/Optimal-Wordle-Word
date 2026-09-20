@@ -582,6 +582,7 @@ halsh
 harks
 helot
 herls
+herse
 heyed
 hippo
 hitch
@@ -691,6 +692,7 @@ moran
 moras
 moray
 mores
+morts
 motto
 mould
 mourn
@@ -707,6 +709,7 @@ naifs
 napas
 narre
 nasho
+natto
 navel
 nears
 nerfs
@@ -885,6 +888,7 @@ skies
 skivy
 skugs
 skyrs
+slake
 slaty
 slebs
 slobs
