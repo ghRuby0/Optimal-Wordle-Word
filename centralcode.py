@@ -324,9 +324,9 @@ def golden_algorithm(guess_matrix, word_list, master_word_list, base_entropy):
         # Adds word to file
         check = check + 1
         with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedwords.txt"]), "a") as file:
-            file.write(test_word + "\n")
+            file.write("\n" + test_word)
         with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]), "a") as file:
-            file.write(test_word + "~" + str(ex_infogain) + "\n")
+            file.write("\n" + test_word + "~" + str(ex_infogain))
 
 
 
