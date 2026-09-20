@@ -18,8 +18,6 @@ GUESS_MATRIX = [[("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # Lette
                 [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")],
                 [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")]]
 
-PRIORS = ["SLATE"] # List of all words you want to include inside the guess matrix with no assigned colours (All caps)
-
 CHECKEDFILE = "all_checked_words" # File name for subfolder containing already collected results
 
 # Imports
@@ -388,7 +386,6 @@ print("Total Wordlist Found:", len(master_word_list), "words testable")
 print("Unchecked words", len(unchecked_words_list), "+ checked words", checkedwords, "=", checkedwords + len(unchecked_words_list))
 print("Thus far ", (checkedwords / len(master_word_list)) * 100, "% checked")
 print("=========================")
-print("Priors: ", PRIORS)
 
 # If there's still work to be done
 if len(unchecked_words_list) != 0:

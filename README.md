@@ -20,6 +20,7 @@ The files currently present are attributed as follows:
 "5-letters.txt" published by Blkzer0 on gitHub
 "valid-wordle-words" published by dracos on gitHub
 "wordle-answers-alphabetical" published by cfreshman on gitHub 
+"reubens_wordle_words" curated by me
 Code directly imitates the game "Wordle" designed by Josh Wardle. Yes, that's his real name.
 
 The code will also create a folder within the directory containing the results (2-3 .txt files): both a list of all words already checked, and the results of their respective expected information gain statistics. 
