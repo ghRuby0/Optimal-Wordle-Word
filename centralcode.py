@@ -18,7 +18,17 @@ GUESS_MATRIX = [[("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # Lette
                 [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")],
                 [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")]]
 
-CHECKEDFILE = "all_checked_words" # File name for subfolder containing already collected results
+PRIORS = [] # List of all prior words that should be taken as being a part of any guess matrix. Max 6
+
+CHECKEDFILE = "all_checked_words_priors" # File name for subfolder containing already collected results
+if len(PRIORS) == 0:
+    CHECKEDFILE = CHECKEDFILE + "-NONE"
+else:
+    for pr in PRIORS:
+        CHECKEDFILE = CHECKEDFILE + "-" + pr
+
+
+print(" ALL PRIORS : ", PRIORS)
 
 # Imports
 import os
@@ -46,6 +56,10 @@ if int(SHUFFLER_METHOD) + int(ABSOLUTE_METHOD) + int(DEBUG_METHOD) != 1:
 if DEBUG_METHOD and (ITERLEN < LDB_LEN):
     raise ValueError("ITERLEN cannot be set to less than LDB_LEN. Either lower LDB_LEN (recommended) or raise ITERLEN")
 
+# Aesthetic function to properly print matrices
+def matrix_print(matrix):
+    for row in matrix:
+        print(row)
 
 # Takes the file name of the list and returns the words, formatted as a list
 def list_extract(file_name):
@@ -89,7 +103,7 @@ def get_element_options(guess_matrix, word_list):
                 options[i] = [letter]
             elif colour == "y" or colour == "n":
                 for op in slot:
-                    if op == letter:
+                    if (op == letter) and (op in options[i]):
                         (options[i]).remove(op)
         i = i + 1
 
@@ -107,7 +121,7 @@ def get_element_options(guess_matrix, word_list):
                     i = 0
                     for slot in options:
                         for op in slot:
-                            if op == letter:
+                            if (op == letter) and (op in options[i]):
                                 (options[i]).remove(op)
                         i = i + 1
 
@@ -135,7 +149,7 @@ def get_element_options(guess_matrix, word_list):
                     i = 0
                     for elem in guess:
                         if i not in greens:
-                            if letter in options[i]:
+                            if (letter in options[i]) and (letter in options[i]):
                                 (options[i]).remove(letter)
                         i = i + 1
     # Handles yellows in cases 3 and 7. Loops until equilibrium
@@ -276,13 +290,6 @@ def wordle(true_word, guess_word):
 def golden_algorithm(guess_matrix, word_list, master_word_list, base_entropy):
     print("=======================")
 
-    # Finds the nearest empty line
-    new_line = 0
-    for guess in guess_matrix:
-        if guess[0][0] == "*":
-            break
-        new_line = new_line + 1 
-
     # Loops through each possible word to find the best opener
     check = 1
     for test_word in word_list:
@@ -290,14 +297,16 @@ def golden_algorithm(guess_matrix, word_list, master_word_list, base_entropy):
         print("Checking", check, "//", ITERLEN, "---", test_word)
         convolutions = []
         for word in master_word_list:
-            result = wordle(word, test_word)
+            results = [wordle(word, test_word)]
+            for pr in PRIORS:
+                results.append(wordle(word, pr))
             found = False
             for conv in convolutions:
-                if result == conv[0]:
+                if results == conv[0]:
                     conv[1] = conv[1] + 1
                     found = True
             if not found:
-                convolutions.append([result, 1])
+                convolutions.append([results, 1])
         n = len(master_word_list)
         for conv in convolutions:
             conv[1] = float(conv[1]) / float(n)
@@ -310,10 +319,27 @@ def golden_algorithm(guess_matrix, word_list, master_word_list, base_entropy):
             test_guess_matrix = guess_matrix.copy()
             test_guess = []
             i = 0
-            for col in conv[0]:
+
+            # Adds the guess word into the matrix
+            for col in conv[0][0]:
                 test_guess.append(((test_word[i]).upper(), col))
                 i = i + 1
-            test_guess_matrix[new_line] = test_guess
+            test_guess_matrix[0] = test_guess
+
+            # Adds priors into the matrix as well as their associated conformation values
+            if len(conv[0]) > 1:
+                k = 0
+                for res in conv[0][1:]:
+                    i = 0
+                    test_guess = []
+                    for col in res:
+                        test_guess.append(((PRIORS[k][i]).upper(), col))
+                        i = i + 1
+                    test_guess_matrix[k + 1] = test_guess
+                    k = k + 1
+
+            matrix_print(test_guess_matrix)
+
             test_entropy = entropy_of_options(get_element_options(test_guess_matrix, master_word_list))
             infogain = base_entropy - test_entropy
             print("> Tested", j, "/", len(convolutions), " : ", conv, " :: Infogain: ", infogain, "nats")
