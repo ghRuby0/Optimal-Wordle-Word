@@ -1,19 +1,22 @@
-CHECKEDFILES = ["all_checked_words_priors-NONE", "all_checked_words_priors-slate"] # File name for subfolder containing already collected results
+# Cleans requested lists and formats appropriately.
 
 # Imports
 import os
 from pathlib import Path
 
+# Get a list of names of all relevant folders for cleaning
+folders = [item.name for item in Path('.').iterdir() if (item.is_dir() and ("all_checked_words" in item.name))]
+
 # Gets cwd
 cwd = Path(os.getcwd())
 
 # Iterates through each of the folders required
-for CHECKEDFILE in CHECKEDFILES:
+for cf in folders:
 
     # Checks 1:1 correlation between the two lists
-    with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedwords.txt"]), 'r') as file:
+    with open(str(cwd) + "".join(["\\", cf, "\\checkedwords.txt"]), 'r') as file:
         checked_words = list(set([line.strip() for line in file]))
-    with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]), 'r') as file:
+    with open(str(cwd) + "".join(["\\", cf, "\\checkedleaderboard.txt"]), 'r') as file:
         checked_words_leader = list(set([line.strip() for line in file]))
 
     # Checks the checked words against the leaderboard
@@ -56,38 +59,38 @@ for CHECKEDFILE in CHECKEDFILES:
         checked_words_leader.remove(rm)   
 
     # Writes them back in
-    with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]), 'w') as file:
+    with open(str(cwd) + "".join(["\\", cf, "\\checkedleaderboard.txt"]), 'w') as file:
         file.write('\n'.join(checked_words_leader))
-    with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedwords.txt"]), 'w') as file:
+    with open(str(cwd) + "".join(["\\", cf, "\\checkedwords.txt"]), 'w') as file:
         file.write('\n'.join(checked_words))
 
 
     # Re-writes the checkedleaderboard.txt file in score order
-    with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]), 'r') as file:
+    with open(str(cwd) + "".join(["\\", cf, "\\checkedleaderboard.txt"]), 'r') as file:
         checked_words = list(set([line.strip() for line in file]))
     if "" in checked_words:
         checked_words.remove("")
     checked_words = sorted(checked_words, key=lambda x: float(x[6:]), reverse=True)
-    with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\leaderboard_ordered.txt"]), 'w') as file:
+    with open(str(cwd) + "".join(["\\", cf, "\\leaderboard_ordered.txt"]), 'w') as file:
         file.write('\n'.join(checked_words))
 
     # Overwrites the checkedwords.txt file to prevent repeats
-    with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedwords.txt"]), 'r') as file:
+    with open(str(cwd) + "".join(["\\", cf, "\\checkedwords.txt"]), 'r') as file:
         checked_words = list(set([line.strip() for line in file]))
     if "" in checked_words:
         checked_words.remove("")
     checked_words = sorted(checked_words)
-    with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedwords.txt"]), 'w') as file:
+    with open(str(cwd) + "".join(["\\", cf, "\\checkedwords.txt"]), 'w') as file:
         file.write('\n'.join(checked_words))
 
     # Over-writes the checkedleaderboard.txt file to prevent repeats
-    with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]), 'r') as file:
+    with open(str(cwd) + "".join(["\\", cf, "\\checkedleaderboard.txt"]), 'r') as file:
         checked_words = list(set([line.strip() for line in file]))
     if "" in checked_words:
         checked_words.remove("")
     checked_words = sorted(checked_words)
-    with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]), 'w') as file:
+    with open(str(cwd) + "".join(["\\", cf, "\\checkedleaderboard.txt"]), 'w') as file:
         file.write('\n'.join(checked_words))
 
-    print("Completed for", CHECKEDFILE)
-
+    print("Completed for", cf)
+print("Completed Successfully!")

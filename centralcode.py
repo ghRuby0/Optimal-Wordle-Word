@@ -338,7 +338,7 @@ def golden_algorithm(guess_matrix, word_list, master_word_list, base_entropy):
                     test_guess_matrix[k + 1] = test_guess
                     k = k + 1
 
-            matrix_print(test_guess_matrix)
+            # matrix_print(test_guess_matrix)
 
             test_entropy = entropy_of_options(get_element_options(test_guess_matrix, master_word_list))
             infogain = base_entropy - test_entropy
