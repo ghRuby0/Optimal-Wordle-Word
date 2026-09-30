@@ -152,6 +152,7 @@ def get_element_options(guess_matrix, word_list):
                             if (letter in options[i]) and (letter in options[i]):
                                 (options[i]).remove(letter)
                         i = i + 1
+                        
     # Handles yellows in cases 3 and 7. Loops until equilibrium
     update = True
     while (update == True):
@@ -476,3 +477,5 @@ if CHECKLEADERBOARD:
             for word in sorted(ldb, key=lambda x: x[1], reverse=True):
                 file.write(word[0] + "--- EIG ~ " + word[1] + "\n")
             file.close()
+
+
