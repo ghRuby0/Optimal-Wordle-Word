@@ -8,8 +8,6 @@ SHUFFLER_METHOD = False # Set to true if you want the shuffler method. See READM
 DEBUG_METHOD = False # Do you want to run on only a slice?
 DEBUG_SIZE = ITERLEN # How big do you want that slice to be? Copies ITERLEN value, so go change that
 START_FROM_SCRATCH = False # Do you want to reset your leaderboard data every time you run?
-PRINTOUT = False # Set to true if you want a printed-out file containing the results
-CHECKLEADERBOARD = True # Set to true if you want a printed summary of the results so far
 
 GUESS_MATRIX = [[("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # Letters are tagged with "y", "g", "n" for "yellow",
                 [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # "green", or "none (grey)". Actual letters are capital.
@@ -71,6 +69,7 @@ def list_extract(file_name):
 
 # Returns an element options list based on a given guess matrix
 def get_element_options(guess_matrix, word_list):
+
     # Gets the options BEFORE you consider the guess matrix data
     # Finds the possibilities for each letter slot
     i = 0
@@ -92,7 +91,7 @@ def get_element_options(guess_matrix, word_list):
     # 5 If a cell is grey, and no other instances of that letter appear in the word, remove the grey from all slot options
     # 6 If a cell is yellow, then that cell may not contain that letter
     # 7 If a cell is yellow, and there is only one possible place that yellow could go, that cell must be assigned green with that letter
-    
+
     # Handles Single-Colour implications (1,4,6)
     i = 0
     for slot in options:
@@ -164,21 +163,28 @@ def get_element_options(guess_matrix, word_list):
                     none_are_yellow = False
         if none_are_yellow:
             break
+
+        # Iterates through each guess word
         for guess in guess_matrix:
             for element in guess:
                 letter = element[0]
                 colour = element[1]
                 if colour == "y":
+
                     # Handles case 7
+                    # Finds the amount of yellows of the same letter
                     amt_yellows = 0
                     for elem in guess:
                         if (elem[0] == letter) and (elem[1] == colour):
                             amt_yellows = amt_yellows + 1
+
                     choices = 0
                     i = 0
                     spots = []
+
+                    # If the amount of possible yellows is the same as the amount of that letter there has to be, assign all to that character
                     for slot in options:
-                        if letter in slot:
+                        if letter in slot: # What if there are greens?
                             choices = choices + 1
                             spots.append(i)
                         i = i + 1
@@ -218,17 +224,93 @@ def get_element_options(guess_matrix, word_list):
                                 options[spt] = [letter]
                                 update = True 
 
+    # Finds the minimum mandated amount of each letter in a word to ensure options must fit
+    minimum_counts = {}
+    for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+        minimum_counts[c] = 0
+    for guess in guess_matrix:
+        if guess == [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")]:
+            break
+        letters = []
+        for elem in guess:
+            letters.append(elem[0])
+        letters = set(letters)
+
+        for l in letters:
+            min_c = 0
+            for elem in guess:
+                if (elem[0] == l) and (elem[1] == "g" or elem[1] == "y"):
+                    min_c = min_c + 1
+            if minimum_counts[l] < min_c:
+                minimum_counts[l] = min_c
+
+    # Finds the maximum mandated amount of each letter in a word to ensure options must fit
+    maximum_counts = {}
+    for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+        maximum_counts[c] = 5
+    for guess in guess_matrix:
+        if guess == [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")]:
+            break
+        letters = []
+        for elem in guess:
+            letters.append(elem[0])
+        letters = set(letters)
+
+        for l in letters:
+            max_c = 5
+            amt = 0
+            grey_count = 0
+            for elem in guess:
+                if elem[0] == l:
+                    amt = amt + 1
+                    if elem[1] == "n":
+                        grey_count = grey_count + 1
+
+            if (grey_count == amt) and (amt != 0):
+                max_c = 0
+            if (grey_count != 0) and (grey_count != amt):
+                max_c = amt - grey_count
+
+            if max_c < maximum_counts[l]:
+                maximum_counts[l] = max_c
+
+
     # Recalculates the word list based on this new abbreviated options list
     removables = []
     rem_word_list = word_list.copy()
     for word in rem_word_list:
         i = 0
         for letter in word:
-            if (letter.upper() not in options[i]) and (word not in removables):
+            if (letter.upper() not in options[i]):
                 removables.append(word)
             i = i + 1
     for remov in removables:
+        if remov in rem_word_list:
+            rem_word_list.remove(remov)
+
+    # Removes all the word list words by minimum and maximum letter count mandate
+    removables = []
+    removed = 0
+    for l, min_c in minimum_counts.items():
+        if min_c != 0:
+            for word in rem_word_list:
+                amt_l = 0
+                for letter in word:
+                    if letter.upper() == l:
+                        amt_l = amt_l + 1
+                if (amt_l < min_c):
+                    removables.append(word)
+                    removed = removed + 1
+                if (amt_l > maximum_counts[l]):
+                    removables.append(word)
+                    removed = removed + 1
+    removables = set(removables)
+    for remov in removables:
         rem_word_list.remove(remov)
+
+    if len(rem_word_list) == 0:
+        matrix_print(guess_matrix)
+        raise ValueError("SOMEHOW GOT RID OF EVERYTHING")
 
     # Generates a new options list with probabilities for this new word list
     n = len(rem_word_list)
@@ -265,25 +347,41 @@ def entropy_of_options(options):
 # Takes a true word and guess word and returns a colour string of the form "ngyyn"
 def wordle(true_word, guess_word):
     col_answer = ["n","n","n","n","n"]
+
+    # Handles greens
     i = 0
     for letter in guess_word:
         if letter == true_word[i]:
             col_answer[i] = "g"
-        if (letter in true_word) and (letter != true_word[i]):
-            amount = 0
-            for let in true_word:
-                if let == letter:
-                    amount = amount + 1
-            j = 0
-            for let in guess_word:
-                if j < i:
-                    if let == letter:
-                        amount = amount - 1
-                if j == i:
-                    if amount > 0:
-                        col_answer[i] = "y"
-                j = j + 1
         i = i + 1
+
+    # Handles yellows
+    letter_set = set(guess_word)
+    for letter in letter_set:
+        yellow_candidates = []
+
+        amt_in_word = 0
+        for l in true_word:
+            if l == letter:
+                amt_in_word = amt_in_word + 1
+
+        i = 0
+        for l in guess_word:
+            if (l == letter) and (col_answer[i] == "g"):
+                amt_in_word = amt_in_word - 1
+            i = i + 1
+
+        i = 0
+        for l in guess_word:
+            if (l == letter) and (l in true_word) and (l != true_word[i]):
+                yellow_candidates.append(i)
+            i = i + 1
+
+        for index in yellow_candidates:
+            if amt_in_word > 0:
+                col_answer[index] = "y"
+            amt_in_word = amt_in_word - 1
+
     return col_answer
 
 
@@ -362,8 +460,6 @@ def golden_algorithm(guess_matrix, word_list, master_word_list, base_entropy):
 # ACTIVE CODE BELOW
 #                   """"""
 
-
-
 # Acquires all possible words it could be, searching word lists that aren't in IGNORE
 print("Acquiring Words")
 master_word_list = []
@@ -414,6 +510,19 @@ print("Unchecked words", len(unchecked_words_list), "+ checked words", checkedwo
 print("Thus far ", (checkedwords / len(master_word_list)) * 100, "% checked")
 print("=========================")
 
+
+
+for i in range(20):
+    tw = random.choice(master_word_list)
+    gw = random.choice(master_word_list)
+    print(tw)
+    print(gw)
+    print(wordle(tw,gw))
+
+    raise ValueError("poop")
+
+
+
 # If there's still work to be done
 if len(unchecked_words_list) != 0:
 
@@ -453,29 +562,5 @@ if len(unchecked_words_list) != 0:
 
 print("Methodology Completed")
 
-# Extracts the leaderboard and produces results
-if CHECKLEADERBOARD:
-    leaderboard = list_extract(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]))
-    print(len(leaderboard), "words checked")
-    ldb = []
-    for line in leaderboard:
-        line = "".join(line.split())
-        data = line.split("~")
-        ldb.append((data[0], data[1]))
-    ldb = sorted(ldb, key=lambda x: x[1])
-    print("WORST WORDS:\n=============")
-    for i in range(LDB_LEN):
-        print(">", ldb[i][0], "---", "EX INFOGAIN", ldb[i][1], "nats")
-    print("BEST WORDS:\n=============")
-    for i in range(checkedwords - LDB_LEN, checkedwords):
-        print(">", ldb[i][0], "---", "EX INFOGAIN", ldb[i][1], "nats")
-
-    # Writes total leaderboard output into a file 
-    if PRINTOUT:
-        with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\finalresults.txt"]), "w") as file:
-            file.write("Produced using the" + method + "method with ITERLEN" + str(ITERLEN) + "\n")
-            for word in sorted(ldb, key=lambda x: x[1], reverse=True):
-                file.write(word[0] + "--- EIG ~ " + word[1] + "\n")
-            file.close()
 
 
