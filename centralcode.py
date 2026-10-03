@@ -386,14 +386,14 @@ def wordle(true_word, guess_word):
 
 
 # My preferred word decision algorithm, as described above
-def golden_algorithm(guess_matrix, word_list, master_word_list, base_entropy):
+def golden_algorithm(guess_matrix, word_list, master_word_list, base_entropy, num):
     print("=======================")
 
     # Loops through each possible word to find the best opener
     check = 1
     for test_word in word_list:
         # Acquires the probability of each colour convolution
-        print("Checking", check, "//", ITERLEN, "---", test_word)
+        print("Checking", check, "//", num, "---", test_word)
         convolutions = []
         for word in master_word_list:
             results = [wordle(word, test_word)]
@@ -519,7 +519,7 @@ for i in range(20):
     print(gw)
     print(wordle(tw,gw))
 
-    raise ValueError("poop")
+raise ValueError("poop")
 
 
 
@@ -536,9 +536,9 @@ if len(unchecked_words_list) != 0:
         print(ITERLEN, "Words to run")
         # Takes ITERDIR number of words, tests them, adds them to the leaderboard
         if len(unchecked_words_list) > ITERLEN:
-            golden_algorithm(GUESS_MATRIX, unchecked_words_list[0:ITERLEN], master_word_list, base_entropy)
+            golden_algorithm(GUESS_MATRIX, unchecked_words_list[0:ITERLEN], master_word_list, base_entropy, ITERLEN)
         else: 
-            golden_algorithm(GUESS_MATRIX, unchecked_words_list, master_word_list, base_entropy)
+            golden_algorithm(GUESS_MATRIX, unchecked_words_list, master_word_list, base_entropy, len(unchecked_words_list))
 
     # Runs the Shuffler Method (See README for details)
     if SHUFFLER_METHOD:
@@ -553,12 +553,12 @@ if len(unchecked_words_list) != 0:
         i = 0
         for i in range(numwhole):
             print("Running slice", str(i + 1), "//" , str(numwhole + 1))
-            golden_algorithm(GUESS_MATRIX, unchecked_words_list[i * ITERLEN:(i + 1)*ITERLEN], unchecked_words_list[i * ITERLEN:(i + 1)*ITERLEN], base_entropy)
+            golden_algorithm(GUESS_MATRIX, unchecked_words_list[i * ITERLEN:(i + 1)*ITERLEN], unchecked_words_list[i * ITERLEN:(i + 1)*ITERLEN], base_entropy, ITERLEN)
             i = i + 1
         print("running final slice")
         difflist = random.sample(unchecked_words_list[:numwhole * ITERLEN], diff)
         lastslice = difflist + unchecked_words_list[numwhole*ITERLEN:]
-        golden_algorithm(GUESS_MATRIX, lastslice, lastslice, base_entropy)
+        golden_algorithm(GUESS_MATRIX, lastslice, lastslice, base_entropy, len(difflist))
 
 print("Methodology Completed")
 
