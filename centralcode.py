@@ -511,18 +511,6 @@ print("Thus far ", (checkedwords / len(master_word_list)) * 100, "% checked")
 print("=========================")
 
 
-
-for i in range(20):
-    tw = random.choice(master_word_list)
-    gw = random.choice(master_word_list)
-    print(tw)
-    print(gw)
-    print(wordle(tw,gw))
-
-raise ValueError("poop")
-
-
-
 # If there's still work to be done
 if len(unchecked_words_list) != 0:
 
