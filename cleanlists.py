@@ -5,13 +5,42 @@ import os
 from pathlib import Path
 
 # Get a list of names of all relevant folders for cleaning
-folders = [item.name for item in Path('.').iterdir() if (item.is_dir() and ("all_checked_words" in item.name))]
+folders = [f.name for f in Path('.').iterdir() if (f.is_dir() and ("all_checked_words" in f.name))]
 
 # Gets cwd
 cwd = Path(os.getcwd())
 
 # Iterates through each of the folders required
 for cf in folders:
+    print(cf)
+
+    # Writes all server results files into the main files
+    kills = []
+    for f in sorted(Path(cf).iterdir(), key=lambda x: x.name):
+
+        if "checkedwords-" in f.name:
+            with open(str(cwd) + "".join(["\\", cf, "\\", f.name]), 'r') as file:
+                checked_words = list(set([line.strip() for line in file]))
+            with open(str(cwd) + "".join(["\\", cf, "\\checkedwords.txt"]), 'a') as file:
+                for word in checked_words:
+                    file.write("\n" + word)
+            print("Accessed and transferred data from", f.name)
+            kills.append(f)
+
+        if "checkedleaderboard-" in f.name:
+            with open(str(cwd) + "".join(["\\", cf, "\\", f.name]), 'r') as file:
+                checked_lines = list(set([line.strip() for line in file]))
+            with open(str(cwd) + "".join(["\\", cf, "\\checkedleaderboard.txt"]), 'a') as file:
+                for word in checked_lines:
+                    file.write("\n" + word)
+            print("Accessed and transferred data from", f.name)
+            kills.append(f)
+
+    # Delete these files
+    for f in kills:
+        os.remove(str(cwd) + "".join(["\\", cf, "\\", f.name]))       
+
+        
 
     # Checks 1:1 correlation between the two lists
     with open(str(cwd) + "".join(["\\", cf, "\\checkedwords.txt"]), 'r') as file:

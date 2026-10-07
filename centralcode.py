@@ -9,7 +9,7 @@ DEBUG_METHOD = False # Do you want to run on only a slice?
 DEBUG_SIZE = ITERLEN # How big do you want that slice to be? Copies ITERLEN value, so go change that
 START_FROM_SCRATCH = False # Do you want to reset your leaderboard data every time you run?
 
-ALSO_PRINT_NEW = False # Do you want to print just new results
+ALSO_PRINT_NEW = True # Do you want to print just new results as well as add to the overall list?
 NEW_PRINT_NAME = "server1" # Nickname for this runner
 
 GUESS_MATRIX = [[("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # Letters are tagged with "y", "g", "n" for "yellow",
