@@ -9,6 +9,9 @@ DEBUG_METHOD = False # Do you want to run on only a slice?
 DEBUG_SIZE = ITERLEN # How big do you want that slice to be? Copies ITERLEN value, so go change that
 START_FROM_SCRATCH = False # Do you want to reset your leaderboard data every time you run?
 
+ALSO_PRINT_NEW = False # Do you want to print just new results
+NEW_PRINT_NAME = "server1" # Nickname for this runner
+
 GUESS_MATRIX = [[("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # Letters are tagged with "y", "g", "n" for "yellow",
                 [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # "green", or "none (grey)". Actual letters are capital.
                 [("*","*"), ("*","*"), ("*","*"), ("*","*"), ("*","*")], # Examples: "A,g", "P,n", "J,y", "K,y", etc.
@@ -82,16 +85,6 @@ def get_element_options(guess_matrix, word_list):
         options.append(slot_options)
         i = i + 1
 
-    # Cleans options based on guess matrix data
-    # Logic Used:
-    # 1 If a cell is green, then there is only one possible option for that cell
-    # 2 If a cell is green, and another cell with the same letter is grey, then that letter must be removed from all options except the green cell
-    # 3 If a cell is green, and another cell with the same letter is yellow, then that comes under the provision where yellow letters need to be narrowed down
-    # 4 If a cell is grey, then that cell may not contain that letter
-    # 5 If a cell is grey, and no other instances of that letter appear in the word, remove the grey from all slot options
-    # 6 If a cell is yellow, then that cell may not contain that letter
-    # 7 If a cell is yellow, and there is only one possible place that yellow could go, that cell must be assigned green with that letter
-
     # Handles Single-Colour implications (1,4,6)
     i = 0
     for slot in options:
@@ -105,124 +98,6 @@ def get_element_options(guess_matrix, word_list):
                     if (op == letter) and (op in options[i]):
                         (options[i]).remove(op)
         i = i + 1
-
-    # Handles single-instance greys (5)
-    for guess in guess_matrix:
-        for element in guess:
-            letter = element[0]
-            colour = element[1]
-            if colour == "n":
-                amount = 0
-                for elem in guess:
-                    if elem[0] == letter:
-                        amount = amount + 1
-                if amount == 1:
-                    i = 0
-                    for slot in options:
-                        for op in slot:
-                            if (op == letter) and (op in options[i]):
-                                (options[i]).remove(op)
-                        i = i + 1
-
-    # Handles (2): Mixed greens and greys
-    for guess in guess_matrix:
-        for element in guess:
-            letter = element[0]
-            amount = 0
-            for elem in guess:
-                if elem[0] == letter:
-                    amount = amount + 1
-            if amount > 1:
-                amt_green = 0
-                amt_grey = 0 
-                greens = []
-                i = 0
-                for elem in guess:
-                    if (elem[0] == letter) and (elem[1] == "g"):
-                        amt_green = amt_green + 1
-                        greens.append(i)
-                    elif (elem[0] == letter) and (elem[1] == "n"):
-                        amt_grey = amt_grey + 1
-                    i = i + 1
-                if (amt_green >= 1) and (amt_grey >= 1):
-                    i = 0
-                    for elem in guess:
-                        if i not in greens:
-                            if (letter in options[i]) and (letter in options[i]):
-                                (options[i]).remove(letter)
-                        i = i + 1
-                        
-    # Handles yellows in cases 3 and 7. Loops until equilibrium
-    update = True
-    while (update == True):
-        update = False
-        none_are_yellow = True
-        for guess in guess_matrix:
-            for elem in guess:
-                if elem[1] == "y":
-                    none_are_yellow = False
-        if none_are_yellow:
-            break
-
-        # Iterates through each guess word
-        for guess in guess_matrix:
-            for element in guess:
-                letter = element[0]
-                colour = element[1]
-                if colour == "y":
-
-                    # Handles case 7
-                    # Finds the amount of yellows of the same letter
-                    amt_yellows = 0
-                    for elem in guess:
-                        if (elem[0] == letter) and (elem[1] == colour):
-                            amt_yellows = amt_yellows + 1
-
-                    choices = 0
-                    i = 0
-                    spots = []
-
-                    # If the amount of possible yellows is the same as the amount of that letter there has to be, assign all to that character
-                    for slot in options:
-                        if letter in slot: # What if there are greens?
-                            choices = choices + 1
-                            spots.append(i)
-                        i = i + 1
-                    if choices == amt_yellows:
-                        for spt in spots:
-                            if options[spt] != [letter]:
-                                options[spt] = [letter]
-                                update = True
-
-                    # Case 3
-                    # If an element is yellow in conjuction with a green, assign it into any green slot that is not that slot,
-                    # If no such option slot exist, pigeonhole it into any remaining slot
-                    i = 0
-                    for elem in guess:
-                        amt_greens = 0
-                        green_slots = []
-                        if (elem[0] == letter) and (elem[1] == "g"):
-                            green_slots.append(i)
-                            amt_greens = amt_greens + 1
-                        amt_yellows = 0
-                        for elem in guess:
-                            if (elem[0] == letter) and (elem[1] == colour):
-                                amt_yellows = amt_yellows + 1
-                        i = i + 1
-                    choices = 0
-                    i = 0
-                    spots = []
-                    for slot in options:
-                        if letter in slot:
-                            choices = choices + 1
-                            spots.append(i)
-                        i = i + 1
-
-                    if amt_yellows == choices - amt_greens:
-                        for spt in spots:
-                            if options[spt] != [letter]: 
-                                options[spt] = [letter]
-                                update = True 
 
     # Finds the minimum mandated amount of each letter in a word to ensure options must fit
     minimum_counts = {}
@@ -288,6 +163,7 @@ def get_element_options(guess_matrix, word_list):
         if remov in rem_word_list:
             rem_word_list.remove(remov)
 
+
     # Removes all the word list words by minimum and maximum letter count mandate
     removables = []
     removed = 0
@@ -310,7 +186,7 @@ def get_element_options(guess_matrix, word_list):
 
     if len(rem_word_list) == 0:
         matrix_print(guess_matrix)
-        raise ValueError("SOMEHOW GOT RID OF EVERYTHING")
+        raise ValueError("Somehow, this conformation corresponds to no real numbers")
 
     # Generates a new options list with probabilities for this new word list
     n = len(rem_word_list)
@@ -437,8 +313,6 @@ def golden_algorithm(guess_matrix, word_list, master_word_list, base_entropy, nu
                     test_guess_matrix[k + 1] = test_guess
                     k = k + 1
 
-            # matrix_print(test_guess_matrix)
-
             test_entropy = entropy_of_options(get_element_options(test_guess_matrix, master_word_list))
             infogain = base_entropy - test_entropy
             print("> Tested", j, "/", len(convolutions), " : ", conv, " :: Infogain: ", infogain, "nats")
@@ -452,6 +326,11 @@ def golden_algorithm(guess_matrix, word_list, master_word_list, base_entropy, nu
             file.write("\n" + test_word)
         with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]), "a") as file:
             file.write("\n" + test_word + "~" + str(ex_infogain))
+        if ALSO_PRINT_NEW:
+            with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedwords-" + NEW_PRINT_NAME + ".txt"]), "a") as file:
+                file.write("\n" + test_word)
+            with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard-" + NEW_PRINT_NAME + ".txt"]), "a") as file:
+                file.write("\n" + test_word + "~" + str(ex_infogain))
 
 
 
@@ -490,6 +369,11 @@ if cwd / CHECKEDFILE in cwd.iterdir():
             file.close()
         with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard.txt"]), "a") as file:
             file.close()
+        if ALSO_PRINT_NEW:
+            with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedwords-" + NEW_PRINT_NAME + ".txt"]), "a") as file:
+                file.close()
+            with open(str(cwd) + "".join(["\\", CHECKEDFILE, "\\checkedleaderboard-" + NEW_PRINT_NAME + ".txt"]), "a") as file:
+                file.close()
     list_word_list = list(set(list_extract(CHECKEDFILE + "\\checkedwords.txt")))
     checkedwords = len(list_word_list)
     print("Already checked words: ", checkedwords)
@@ -509,7 +393,6 @@ print("Total Wordlist Found:", len(master_word_list), "words testable")
 print("Unchecked words", len(unchecked_words_list), "+ checked words", checkedwords, "=", checkedwords + len(unchecked_words_list))
 print("Thus far ", (checkedwords / len(master_word_list)) * 100, "% checked")
 print("=========================")
-
 
 # If there's still work to be done
 if len(unchecked_words_list) != 0:
